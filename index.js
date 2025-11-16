@@ -3,6 +3,8 @@ import https from 'https';
 import twilio from 'twilio';
 
 const app = express();
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
 const port = process.env.PORT || 3000;
 
 
