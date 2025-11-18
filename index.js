@@ -20,7 +20,7 @@ const SYSTEM_PROMPT = 'You are Nifiso, an AI-powered legal reception assistant. 
 const ULTRAVOX_CALL_CONFIG = {
     systemPrompt: SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
-    voice: 'Mark',
+    voice: 'Larisa',
     temperature: 0.3,
     medium: { "twilio": {} }
 };
