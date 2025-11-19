@@ -7,6 +7,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 const port = process.env.PORT || 3000;
 
+app.get('/', (req, res) => {
+  res.send('Ultravox Voice Server is running.');
+});
+
 
 // ------------------------------------------------------------
 // Step 1:  Configure Ultravox API key
