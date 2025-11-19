@@ -28,6 +28,40 @@ const ULTRAVOX_CALL_CONFIG = {
     medium: { "twilio": {} }
 };
 
+// -------------------------------
+// Doctor Agent Configuration
+// -------------------------------
+const DOCTOR_SYSTEM_PROMPT = `
+You are the friendly, calm and highly professional receptionist for Dr. Ahmed’s medical practice.
+You speak naturally, clearly and warmly — like a real human assistant who genuinely cares.
+
+GOALS:
+- Understand why the patient is calling.
+- Collect: full name, date of birth, phone number, symptoms or reason for visit, preferred time, and urgency.
+- Never give medical advice.
+- If the caller asks for medical guidance: politely decline and say someone from the practice will call them back.
+- If the conversation naturally ends or the caller stops talking for more than 6 seconds, output <hangup>.
+
+SPEAKING STYLE:
+- Natural tone, warm and human.
+- Occasional realistic fillers ("uhm", "okay", "alright") but not too many.
+- Light natural laughs (“heh”, “haha”) when appropriate.
+- No stage directions (don’t say “smiles”, “laughs”).
+- Never interrupt the caller.
+
+FINAL ACTION:
+When all required data is collected or the conversation is ending, output exactly <hangup>.
+`;
+
+const ULTRAVOX_DOCTOR_CONFIG = {
+    systemPrompt: DOCTOR_SYSTEM_PROMPT,
+    model: 'fixie-ai/ultravox',
+    voice: '84dd2830-ae06-4354-856c-0756087078cd', // deine Stimme
+    temperature: 0.3,
+    medium: { "twilio": {} }
+};
+
+
 // Ensure required configuration vars are set
 function validateConfiguration() {
     const requiredConfig = [
@@ -154,6 +188,82 @@ app.post('/incoming', async (req, res) => {
         res.send(twiml.toString());
     }
 });
+
+app.post('/doctor', async (req, res) => {
+    try {
+        console.log('📞 Incoming DOCTOR call received');
+
+        // Same config validation
+        if (!validateConfiguration()) {
+            console.error('💥 Configuration validation failed for doctor call');
+            const twiml = new twilio.twiml.VoiceResponse();
+            twiml.say('Sorry, there was a configuration error. Please contact support.');
+            res.type('text/xml');
+            return res.send(twiml.toString());
+        }
+
+        console.log('🤖 Creating Doctor Ultravox call...');
+
+        // Doctor-specific call creation
+        const response = await new Promise((resolve, reject) => {
+            const ULTRAVOX_API_URL = 'https://api.ultravox.ai/api/calls';
+            const request = https.request(ULTRAVOX_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': ULTRAVOX_API_KEY
+                }
+            });
+
+            let data = '';
+            request.on('response', (responseStream) => {
+                responseStream.on('data', chunk => data += chunk);
+                responseStream.on('end', () => {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (responseStream.statusCode >= 200 && responseStream.statusCode < 300) {
+                            resolve(parsed);
+                        } else {
+                            reject(new Error(`API error: ${data}`));
+                        }
+                    } catch (e) {
+                        reject(e);
+                    }
+                });
+            });
+
+            request.on('error', err => reject(err));
+            request.write(JSON.stringify(ULTRAVOX_DOCTOR_CONFIG));
+            request.end();
+        });
+
+        if (!response.joinUrl) {
+            throw new Error('No joinUrl received from Ultravox for doctor agent');
+        }
+
+        console.log('✅ Doctor joinUrl:', response.joinUrl);
+
+        const twiml = new twilio.twiml.VoiceResponse();
+        const connect = twiml.connect();
+        connect.stream({
+            url: response.joinUrl,
+            name: 'ultravox-doctor'
+        });
+
+        console.log('📋 Sending DOCTOR TwiML');
+        res.type('text/xml');
+        res.send(twiml.toString());
+
+    } catch (error) {
+        console.error('💥 Error handling doctor call:', error.message);
+
+        const twiml = new twilio.twiml.VoiceResponse();
+        twiml.say('Sorry, the doctor\'s virtual assistant is unavailable. Please try again later.');
+        res.type('text/xml');
+        res.send(twiml.toString());
+    }
+});
+
 
 // Starts Express.js server to expose the /incoming route
 function startServer() {
