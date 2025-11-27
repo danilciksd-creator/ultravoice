@@ -53,10 +53,59 @@ FINAL ACTION:
 When all required data is collected or the conversation is ending, output exactly <hangup>.
 `;
 
+
 const ULTRAVOX_DOCTOR_CONFIG = {
     systemPrompt: DOCTOR_SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
     voice: '84dd2830-ae06-4354-856c-0756087078cd', // deine Stimme
+    temperature: 0.3,
+    medium: { "twilio": {} }
+};
+
+// -------------------------------
+// Handyman Agent Configuration
+// -------------------------------
+const HANDYMAN_SYSTEM_PROMPT = `
+You are the virtual receptionist for a skilled home-service technician.
+You sound friendly, confident, and like a real human – but remain efficient and business-focused.
+
+Your goal is to collect all needed job details so the technician can call back.
+
+Information you must collect:
+1. Full name
+2. Callback phone number (validate format)
+3. Service address (street and city required)
+4. Problem category (plumbing, electrical, carpentry, HVAC, general)
+5. Urgency (urgent / today / this week / flexible)
+6. Best time for callback
+
+Validation rules:
+- Phone must be valid (country code + number)
+  If wrong → “That number seems incomplete. Could you repeat it clearly with the area code?”
+- Address must include street + city
+  If incomplete → “Could you confirm your street address and city?”
+- If caller gives impossible or joking answers, redirect politely to real-world info
+
+Boundaries:
+- Never give technical advice or pricing
+- If asked → “The technician will provide that during the visit.”
+- If off-topic → “I am only designed to help with service requests.”
+
+Brand transparency:
+You may say once:
+“I am a virtual assistant created by Nifiso to support home service businesses.”
+
+Hangup rule:
+When the conversation is complete or caller says goodbye:
+Say a short professional farewell
+Then output the exact token <hangup> as the final message
+Nothing after <hangup>.
+`;
+
+const ULTRAVOX_HANDYMAN_CONFIG = {
+    systemPrompt: HANDYMAN_SYSTEM_PROMPT,
+    model: 'fixie-ai/ultravox',
+    voice: '84dd2830-ae06-4354-856c-0756087078cd', // deine Custom-Voice
     temperature: 0.3,
     medium: { "twilio": {} }
 };
@@ -261,6 +310,65 @@ app.post('/doctor', async (req, res) => {
         twiml.say('Sorry, the doctor\'s virtual assistant is unavailable. Please try again later.');
         res.type('text/xml');
         res.send(twiml.toString());
+    }
+});
+
+app.post('/handyman', async (req, res) => {
+    try {
+        console.log('🔧 Incoming HANDYMAN call received');
+
+        if (!validateConfiguration()) {
+            console.error('💥 Config validation failed for handyman agent');
+            const twiml = new twilio.twiml.VoiceResponse();
+            twiml.say('Service is temporarily unavailable.');
+            return res.type('text/xml').send(twiml.toString());
+        }
+
+        console.log('🤖 Creating Handyman Ultravox call...');
+
+        const response = await new Promise((resolve, reject) => {
+            const url = 'https://api.ultravox.ai/api/calls';
+            const request = https.request(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-API-Key': ULTRAVOX_API_KEY
+                }
+            });
+
+            let data = '';
+            request.on('response', r => {
+                r.on('data', chunk => data += chunk);
+                r.on('end', () => {
+                    try {
+                        const parsed = JSON.parse(data);
+                        if (r.statusCode >= 200 && r.statusCode < 300) {
+                            resolve(parsed);
+                        } else reject(new Error(`API error: ${data}`));
+                    } catch (err) { reject(err); }
+                });
+            });
+
+            request.on('error', reject);
+            request.write(JSON.stringify(ULTRAVOX_HANDYMAN_CONFIG));
+            request.end();
+        });
+
+        if (!response.joinUrl) throw new Error('No Handyman joinUrl');
+
+        console.log('🔧 Handyman joinUrl:', response.joinUrl);
+
+        const twiml = new twilio.twiml.VoiceResponse();
+        twiml.connect().stream({ url: response.joinUrl, name: "handyman" });
+
+        console.log('📋 Sending HANDYMAN TwiML');
+        res.type('text/xml').send(twiml.toString());
+
+    } catch (err) {
+        console.error('💥 Error HANDYMAN:', err.message);
+        const twiml = new twilio.twiml.VoiceResponse();
+        twiml.say('The handyman assistant cannot take your call right now. Sorry!');
+        res.type('text/xml').send(twiml.toString());
     }
 });
 
