@@ -107,7 +107,7 @@ Boundaries:
 - If off-topic → “I am only designed to help with service requests.”
 
 Brand transparency:
-You may say once:
+You may say once only if asked:
 “I am a virtual assistant created by Nifiso to support home service businesses.”
 
 Hangup rule:
@@ -115,6 +115,7 @@ When the conversation is complete or caller says goodbye:
 Say a short professional farewell
 Then output the exact token <hangup> as the final message
 Nothing after <hangup>.
+Don't make too long sentences.
 `;
 
 const ULTRAVOX_HANDYMAN_CONFIG = {
