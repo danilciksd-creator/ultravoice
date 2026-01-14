@@ -28,7 +28,7 @@ ROLLE: Du bist Maya, die Büro‑ und Telefonassistenz der Physiotherapiepraxis 
 const ULTRAVOX_CALL_CONFIG = {
     systemPrompt: SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
-    voice: 'aa1be3ac-b385-4dca-a5b3-23729bab5c2f',
+    voice: 'f85010c8-bbe8-45e1-b5e4-7be8eee4635f',
     temperature: 0.3,
     medium: { "twilio": {} }
 };
@@ -43,7 +43,7 @@ Du bist Maya, die Büro- und Telefonassistenz von Rass Metalltechnik in Ludwigsh
 const ULTRAVOX_DOCTOR_CONFIG = {
     systemPrompt: DOCTOR_SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
-    voice: 'aa1be3ac-b385-4dca-a5b3-23729bab5c2f',
+    voice: 'f85010c8-bbe8-45e1-b5e4-7be8eee4635f',
     temperature: 0.3,
     medium: { "twilio": {} }
 };
