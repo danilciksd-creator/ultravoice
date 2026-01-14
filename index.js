@@ -17,7 +17,7 @@ app.get('/', (req, res) => {
 //
 // Optional:  Modify the system prompt
 // ------------------------------------------------------------
-const ULTRAVOX_API_KEY = 'aa1be3ac-b385-4dca-a5b3-23729bab5c2f';
+const ULTRAVOX_API_KEY = 'sACIe8va.u8MkGEksUGiDLyezVWsSdTIsqMPFXdKt';
 
 
 
@@ -43,7 +43,7 @@ Du bist Maya, die Büro- und Telefonassistenz von Rass Metalltechnik in Ludwigsh
 const ULTRAVOX_DOCTOR_CONFIG = {
     systemPrompt: DOCTOR_SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
-    voice: '0191cf63-44b7-4277-bffe-be2f5dcc950c',
+    voice: 'aa1be3ac-b385-4dca-a5b3-23729bab5c2f',
     temperature: 0.3,
     medium: { "twilio": {} }
 };
