@@ -24,6 +24,13 @@ const port = process.env.PORT || 3000;
 app.get('/', (req, res) => {
   res.send('Ultravox Voice Server is running.');
 });
+app.get('/ultravox-events', (req, res) => {
+  res.send('OK: POST /ultravox-events (Ultravox webhook)');
+});
+app.get('/handyman', (req, res) => {
+  res.send('OK: POST /handyman (Twilio webhook)');
+});
+
 
 
 // ------------------------------------------------------------
