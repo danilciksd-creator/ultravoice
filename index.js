@@ -429,27 +429,33 @@ app.post('/ultravox-events', async (req, res) => {
     const { event, call } = req.body || {};
     const callId = call?.callId;
 
-    // Wir reagieren auf den Webhook, den du registriert hast
     if (event !== "call.ended" || !callId) {
       return res.sendStatus(204);
     }
 
     console.log("📞 Ultravox call ended:", callId);
+
+    // ✅ 1) Twilio SID sofort holen (metadata bevorzugt)
+    const twilioCallSid =
+      call?.metadata?.["ultravox.twilio.call_sid"] ||
+      callMap.get(callId) ||
+      "unknown";
+
+    // ✅ 2) Mail senden
     const to = process.env.NOTES_EMAIL_TO;
-const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+    const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-const shortSummary = call?.shortSummary || "(keine Kurznotiz)";
-const summary = call?.summary || "(keine Zusammenfassung)";
-const endReason = call?.endReason || "";
-const billedDuration = call?.billedDuration || "";
-const started = call?.created || "";
-const joined = call?.joined || "";
-const ended = call?.ended || "";
+    const shortSummary = call?.shortSummary || "(keine Kurznotiz)";
+    const summary = call?.summary || "(keine Zusammenfassung)";
+    const endReason = call?.endReason || "";
+    const billedDuration = call?.billedDuration || "";
+    const started = call?.created || "";
+    const joined = call?.joined || "";
+    const ended = call?.ended || "";
 
+    const subject = `Anrufnotiz (${billedDuration || "Dauer unbekannt"}) – ${callId}`;
 
-// Email Body (Text)
-const subject = `Anrufnotiz (${billedDuration || "Dauer unbekannt"}) – ${callId}`;
-const textBody =
+    const textBody =
 `Ultravox Anrufnotiz
 
 Call ID: ${callId}
@@ -467,8 +473,7 @@ Zusammenfassung:
 ${summary}
 `;
 
-// Email Body (HTML, optional schöner)
-const htmlBody =
+    const htmlBody =
 `<h2>Ultravox Anrufnotiz</h2>
 <ul>
   <li><b>Call ID:</b> ${callId}</li>
@@ -484,24 +489,41 @@ const htmlBody =
 <h3>Zusammenfassung</h3>
 <p>${escapeHtml(summary)}</p>`;
 
-// Senden (nicht blockierend ist ok, aber wir warten hier sauber)
-if (to) {
-  try {
-    await mailer.sendMail({
-      from,
-      to,
-      subject,
-      text: textBody,
-      html: htmlBody,
-    });
-    console.log("📧 Notes email sent to:", to);
-  } catch (e) {
-    console.error("❌ Notes email failed:", e?.message);
-    console.error(e);
+    if (to) {
+      try {
+        await mailer.sendMail({ from, to, subject, text: textBody, html: htmlBody });
+        console.log("📧 Notes email sent to:", to);
+      } catch (e) {
+        console.error("❌ Notes email failed:", e?.message);
+        console.error(e);
+      }
+    } else {
+      console.warn("⚠️ NOTES_EMAIL_TO not set; skipping email");
+    }
+
+    // ✅ 3) Twilio call beenden (wenn SID nicht unknown)
+    if (twilioCallSid !== "unknown") {
+      console.log("✅ Ending Twilio call:", twilioCallSid);
+      try {
+        await twilioClient.calls(twilioCallSid).update({ status: "completed" });
+        console.log("✅ Twilio hangup OK:", twilioCallSid);
+      } catch (e) {
+        console.error("❌ Twilio hangup FAILED:", e?.message);
+        console.error(e);
+      }
+    }
+
+    callMap.delete(callId);
+    return res.sendStatus(204);
+
+  } catch (err) {
+    console.error("💥 ultravox-events error:", err?.message);
+    console.error(err);
+    return res.sendStatus(204);
   }
-} else {
-  console.warn("⚠️ NOTES_EMAIL_TO not set; skipping email");
-}
+});
+
+
 
 function escapeHtml(str) {
   return String(str)
@@ -511,34 +533,5 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-
-
-    const twilioCallSid = callMap.get(callId);
-    if (!twilioCallSid) {
-      console.warn("⚠️ No Twilio CallSid mapped for callId:", callId);
-      console.log("Known keys:", Array.from(callMap.keys()));
-      return res.sendStatus(204);
-    }
-
-    console.log("✅ Ending Twilio call:", twilioCallSid);
-
-    try {
-      await twilioClient.calls(twilioCallSid).update({ status: "completed" });
-      console.log("✅ Twilio hangup OK:", twilioCallSid);
-    } catch (e) {
-      console.error("❌ Twilio hangup FAILED:", e?.message);
-      console.error(e);
-    }
-
-    callMap.delete(callId);
-    return res.sendStatus(204);
-  } catch (err) {
-    console.error("💥 ultravox-events error:", err?.message);
-    return res.sendStatus(204);
-  }
-});
-
-
-
 
 startServer();
