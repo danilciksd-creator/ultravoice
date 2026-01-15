@@ -394,38 +394,23 @@ function startServer() {
 app.post('/ultravox-events', async (req, res) => {
   try {
     console.log("🟦 /ultravox-events HIT", new Date().toISOString());
-    console.log("Ultravox event:", JSON.stringify(req.body, null, 2));
+    console.log("Ultravox webhook:", JSON.stringify(req.body, null, 2));
 
-    const event = req.body;
+    const { event, call } = req.body || {};
+    const callId = call?.callId;
 
-    const text = (event.outputText || "").toLowerCase();
-    const wantsHangup =
-      event.type === 'response.output_text' && text.includes("<hangup>");
-
-    if (!wantsHangup) {
-      return res.sendStatus(200);
+    // Wir reagieren auf den Webhook, den du registriert hast
+    if (event !== "call.ended" || !callId) {
+      return res.sendStatus(204);
     }
 
-    console.log("📞 AI requested hangup.");
+    console.log("📞 Ultravox call ended:", callId);
 
-    const uvKey =
-      event.callId ||
-      event.call?.id ||
-      event.call?.callId ||
-      event.id ||
-      null;
-
-    if (!uvKey) {
-      console.warn("⚠️ No Ultravox call identifier found in event.");
-      return res.sendStatus(200);
-    }
-
-    const twilioCallSid = callMap.get(uvKey);
-
+    const twilioCallSid = callMap.get(callId);
     if (!twilioCallSid) {
-      console.warn("⚠️ No Twilio CallSid mapped for uvKey:", uvKey);
+      console.warn("⚠️ No Twilio CallSid mapped for callId:", callId);
       console.log("Known keys:", Array.from(callMap.keys()));
-      return res.sendStatus(200);
+      return res.sendStatus(204);
     }
 
     console.log("✅ Ending Twilio call:", twilioCallSid);
@@ -438,13 +423,14 @@ app.post('/ultravox-events', async (req, res) => {
       console.error(e);
     }
 
-    callMap.delete(uvKey);
-    return res.sendStatus(200);
+    callMap.delete(callId);
+    return res.sendStatus(204);
   } catch (err) {
-    console.error("💥 ultravox-events error:", err.message);
-    return res.sendStatus(200);
+    console.error("💥 ultravox-events error:", err?.message);
+    return res.sendStatus(204);
   }
 });
+
 
 
 
