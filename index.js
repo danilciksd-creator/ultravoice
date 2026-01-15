@@ -342,6 +342,7 @@ console.log('📌 Twilio CallSid:', twilioCallSid);
             request.write(JSON.stringify(ULTRAVOX_HANDYMAN_CONFIG));
             request.end();
         });
+        console.log("Ultravox create response:", JSON.stringify(response, null, 2));
 
         if (!response.joinUrl) throw new Error('No Handyman joinUrl');
 
