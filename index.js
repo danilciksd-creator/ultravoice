@@ -2,6 +2,9 @@ import express from 'express';
 import https from 'https';
 import twilio from 'twilio';
 import 'dotenv/config';
+import nodemailer from "nodemailer";
+
+
 
 console.log("Ultravox key loaded:", !!process.env.ULTRAVOX_API_KEY);
 
@@ -17,6 +20,16 @@ const callMap = new Map();
 
 
 const app = express();
+const mailer = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  secure: String(process.env.SMTP_SECURE).toLowerCase() === "true", // true bei 465
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 const port = process.env.PORT || 3000;
@@ -96,8 +109,13 @@ function validateConfiguration() {
     const requiredConfig = [
   { name: 'ULTRAVOX_API_KEY', value: ULTRAVOX_API_KEY }, // Regex raus (zu fragil)
   { name: 'TWILIO_ACCOUNT_SID', value: process.env.TWILIO_ACCOUNT_SID },
-  { name: 'TWILIO_AUTH_TOKEN', value: process.env.TWILIO_AUTH_TOKEN }
+  { name: 'TWILIO_AUTH_TOKEN', value: process.env.TWILIO_AUTH_TOKEN },
+  { name: 'NOTES_EMAIL_TO', value: process.env.NOTES_EMAIL_TO },
+{ name: 'SMTP_HOST', value: process.env.SMTP_HOST },
+{ name: 'SMTP_USER', value: process.env.SMTP_USER },
+{ name: 'SMTP_PASS', value: process.env.SMTP_PASS }
 ];
+
 
 
     const errors = [];
@@ -417,6 +435,83 @@ app.post('/ultravox-events', async (req, res) => {
     }
 
     console.log("📞 Ultravox call ended:", callId);
+    const to = process.env.NOTES_EMAIL_TO;
+const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+const shortSummary = call?.shortSummary || "(keine Kurznotiz)";
+const summary = call?.summary || "(keine Zusammenfassung)";
+const endReason = call?.endReason || "";
+const billedDuration = call?.billedDuration || "";
+const started = call?.created || "";
+const joined = call?.joined || "";
+const ended = call?.ended || "";
+
+
+// Email Body (Text)
+const subject = `Anrufnotiz (${billedDuration || "Dauer unbekannt"}) – ${callId}`;
+const textBody =
+`Ultravox Anrufnotiz
+
+Call ID: ${callId}
+Twilio CallSid: ${twilioCallSid}
+Start: ${started}
+Joined: ${joined}
+Ende: ${ended}
+Endgrund: ${endReason}
+Billed duration: ${billedDuration}
+
+Kurznotiz:
+${shortSummary}
+
+Zusammenfassung:
+${summary}
+`;
+
+// Email Body (HTML, optional schöner)
+const htmlBody =
+`<h2>Ultravox Anrufnotiz</h2>
+<ul>
+  <li><b>Call ID:</b> ${callId}</li>
+  <li><b>Twilio CallSid:</b> ${twilioCallSid}</li>
+  <li><b>Start:</b> ${started}</li>
+  <li><b>Joined:</b> ${joined}</li>
+  <li><b>Ende:</b> ${ended}</li>
+  <li><b>Endgrund:</b> ${endReason}</li>
+  <li><b>Billed duration:</b> ${billedDuration}</li>
+</ul>
+<h3>Kurznotiz</h3>
+<p>${escapeHtml(shortSummary)}</p>
+<h3>Zusammenfassung</h3>
+<p>${escapeHtml(summary)}</p>`;
+
+// Senden (nicht blockierend ist ok, aber wir warten hier sauber)
+if (to) {
+  try {
+    await mailer.sendMail({
+      from,
+      to,
+      subject,
+      text: textBody,
+      html: htmlBody,
+    });
+    console.log("📧 Notes email sent to:", to);
+  } catch (e) {
+    console.error("❌ Notes email failed:", e?.message);
+    console.error(e);
+  }
+} else {
+  console.warn("⚠️ NOTES_EMAIL_TO not set; skipping email");
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 
     const twilioCallSid = callMap.get(callId);
     if (!twilioCallSid) {
