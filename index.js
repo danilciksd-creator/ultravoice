@@ -52,6 +52,10 @@ const ULTRAVOX_CALL_CONFIG = {
     voice: 'f85010c8-bbe8-45e1-b5e4-7be8eee4635f',
     temperature: 0.3,
     medium: { "twilio": {} }
+    selectedTools: [
+  { toolName: "hangUp" }
+],
+
 };
 
 // -------------------------------
@@ -67,6 +71,10 @@ const ULTRAVOX_DOCTOR_CONFIG = {
     voice: '0191cf63-44b7-4277-bffe-be2f5dcc950c',
     temperature: 0.3,
     medium: { "twilio": {} }
+    selectedTools: [
+  { toolName: "hangUp" }
+],
+
 };
 
 
@@ -76,6 +84,10 @@ const ULTRAVOX_HANDYMAN_CONFIG = {
     voice: '0191cf63-44b7-4277-bffe-be2f5dcc950c', // deine Custom-Voice
     temperature: 0.3,
     medium: { "twilio": {} }
+    selectedTools: [
+  { toolName: "hangUp" }
+],
+
 };
 
 
