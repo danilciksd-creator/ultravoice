@@ -385,14 +385,14 @@ function startServer() {
 
 app.post('/ultravox-events', async (req, res) => {
   try {
+    console.log("🟦 /ultravox-events HIT", new Date().toISOString());
+    console.log("Ultravox event:", JSON.stringify(req.body, null, 2));
+
     const event = req.body;
 
-    // 1) Zum Debuggen einmal die Struktur ansehen (später kannst du das wieder rausnehmen)
-    // console.log("Ultravox event:", JSON.stringify(event, null, 2));
-
-    // 2) Hangup erkennen
     const text = (event.outputText || "").toLowerCase();
-    const wantsHangup = event.type === 'response.output_text' && text.includes("<hangup>");
+    const wantsHangup =
+      event.type === 'response.output_text' && text.includes("<hangup>");
 
     if (!wantsHangup) {
       return res.sendStatus(200);
@@ -400,8 +400,6 @@ app.post('/ultravox-events', async (req, res) => {
 
     console.log("📞 AI requested hangup.");
 
-    // 3) Ultravox Call-Key aus dem Event holen
-    // WICHTIG: Das Feld kann je nach Ultravox Payload anders heißen.
     const uvKey =
       event.callId ||
       event.call?.id ||
@@ -410,31 +408,36 @@ app.post('/ultravox-events', async (req, res) => {
       null;
 
     if (!uvKey) {
-      console.warn("⚠️ No Ultravox call identifier found in event. Enable event logging to inspect payload.");
+      console.warn("⚠️ No Ultravox call identifier found in event.");
       return res.sendStatus(200);
     }
 
-    // 4) Den passenden Twilio CallSid finden
     const twilioCallSid = callMap.get(uvKey);
 
     if (!twilioCallSid) {
       console.warn("⚠️ No Twilio CallSid mapped for uvKey:", uvKey);
+      console.log("Known keys:", Array.from(callMap.keys()));
       return res.sendStatus(200);
     }
 
-    // 5) Twilio Call wirklich beenden
     console.log("✅ Ending Twilio call:", twilioCallSid);
-    await twilioClient.calls(twilioCallSid).update({ status: "completed" });
 
-    // 6) Aufräumen
+    try {
+      await twilioClient.calls(twilioCallSid).update({ status: "completed" });
+      console.log("✅ Twilio hangup OK:", twilioCallSid);
+    } catch (e) {
+      console.error("❌ Twilio hangup FAILED:", e?.message);
+      console.error(e);
+    }
+
     callMap.delete(uvKey);
-
     return res.sendStatus(200);
   } catch (err) {
     console.error("💥 ultravox-events error:", err.message);
     return res.sendStatus(200);
   }
 });
+
 
 
 startServer();
