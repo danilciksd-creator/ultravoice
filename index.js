@@ -1,6 +1,20 @@
 import express from 'express';
 import https from 'https';
 import twilio from 'twilio';
+import 'dotenv/config';
+
+console.log("Ultravox key loaded:", !!process.env.ULTRAVOX_API_KEY);
+
+// Twilio REST Client (zum echten Auflegen)
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
+
+// Mapping: Ultravox-Call -> Twilio CallSid
+const callMap = new Map();
+
+
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
@@ -17,7 +31,7 @@ app.get('/', (req, res) => {
 //
 // Optional:  Modify the system prompt
 // ------------------------------------------------------------
-const ULTRAVOX_API_KEY = 'sACIe8va.u8MkGEksUGiDLyezVWsSdTIsqMPFXdKt';
+const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 
 
 
@@ -61,8 +75,11 @@ const ULTRAVOX_HANDYMAN_CONFIG = {
 // Ensure required configuration vars are set
 function validateConfiguration() {
     const requiredConfig = [
-        { name: 'ULTRAVOX_API_KEY', value: ULTRAVOX_API_KEY, pattern: /^[a-zA-Z0-9]{8}\.[a-zA-Z0-9]{32}$/ }
-    ];
+  { name: 'ULTRAVOX_API_KEY', value: ULTRAVOX_API_KEY }, // Regex raus (zu fragil)
+  { name: 'TWILIO_ACCOUNT_SID', value: process.env.TWILIO_ACCOUNT_SID },
+  { name: 'TWILIO_AUTH_TOKEN', value: process.env.TWILIO_AUTH_TOKEN }
+];
+
 
     const errors = [];
 
@@ -130,6 +147,9 @@ async function createUltravoxCall() {
 app.post('/incoming', async (req, res) => {
     try {
         console.log('📞 Incoming call received');
+        const twilioCallSid = req.body.CallSid; // <-- kommt von Twilio
+console.log('📌 Twilio CallSid:', twilioCallSid);
+
         
         // Validate configuration on each call
         if (!validateConfiguration()) {
@@ -149,6 +169,11 @@ app.post('/incoming', async (req, res) => {
         }
         
         console.log('✅ Got Ultravox joinUrl:', response.joinUrl);
+        // Ultravox Call-Key (am besten callId, sonst joinUrl als Fallback)
+const uvKey = response.callId || response.id || response.joinUrl;
+callMap.set(uvKey, twilioCallSid);
+console.log('🧷 Mapped Ultravox->Twilio:', uvKey, '=>', twilioCallSid);
+
 
         const twiml = new twilio.twiml.VoiceResponse();
         const connect = twiml.connect();
@@ -188,6 +213,9 @@ app.post('/incoming', async (req, res) => {
 app.post('/doctor', async (req, res) => {
     try {
         console.log('📞 Incoming DOCTOR call received');
+        const twilioCallSid = req.body.CallSid;
+console.log('📌 Twilio CallSid:', twilioCallSid);
+
 
         // Same config validation
         if (!validateConfiguration()) {
@@ -238,6 +266,10 @@ app.post('/doctor', async (req, res) => {
         }
 
         console.log('✅ Doctor joinUrl:', response.joinUrl);
+        const uvKey = response.callId || response.id || response.joinUrl;
+callMap.set(uvKey, twilioCallSid);
+console.log('🧷 Mapped Ultravox->Twilio:', uvKey, '=>', twilioCallSid);
+
 
         const twiml = new twilio.twiml.VoiceResponse();
         const connect = twiml.connect();
@@ -263,6 +295,9 @@ app.post('/doctor', async (req, res) => {
 app.post('/handyman', async (req, res) => {
     try {
         console.log('🔧 Incoming HANDYMAN call received');
+        const twilioCallSid = req.body.CallSid;
+console.log('📌 Twilio CallSid:', twilioCallSid);
+
 
         if (!validateConfiguration()) {
             console.error('💥 Config validation failed for handyman agent');
@@ -304,6 +339,10 @@ app.post('/handyman', async (req, res) => {
         if (!response.joinUrl) throw new Error('No Handyman joinUrl');
 
         console.log('🔧 Handyman joinUrl:', response.joinUrl);
+        const uvKey = response.callId || response.id || response.joinUrl;
+callMap.set(uvKey, twilioCallSid);
+console.log('🧷 Mapped Ultravox->Twilio:', uvKey, '=>', twilioCallSid);
+
 
         const twiml = new twilio.twiml.VoiceResponse();
         twiml.connect().stream({ url: response.joinUrl, name: "handyman" });
@@ -344,24 +383,57 @@ function startServer() {
     });
 }
 
-app.post('/ultravox-events', express.json(), (req, res) => {
+app.post('/ultravox-events', async (req, res) => {
+  try {
     const event = req.body;
 
-    if (event.type === 'response.output_text') {
-        const text = event.outputText?.toLowerCase() || "";
+    // 1) Zum Debuggen einmal die Struktur ansehen (später kannst du das wieder rausnehmen)
+    // console.log("Ultravox event:", JSON.stringify(event, null, 2));
 
-        // Wenn Ultravox <hangup> sagt → Call beenden
-        if (text.includes("<hangup>")) {
-            console.log("📞 AI requested hangup. Ending call.");
+    // 2) Hangup erkennen
+    const text = (event.outputText || "").toLowerCase();
+    const wantsHangup = event.type === 'response.output_text' && text.includes("<hangup>");
 
-            const twiml = new twilio.twiml.VoiceResponse();
-            twiml.hangup();
-
-            return res.type('text/xml').send(twiml.toString());
-        }
+    if (!wantsHangup) {
+      return res.sendStatus(200);
     }
 
-    res.sendStatus(200);
+    console.log("📞 AI requested hangup.");
+
+    // 3) Ultravox Call-Key aus dem Event holen
+    // WICHTIG: Das Feld kann je nach Ultravox Payload anders heißen.
+    const uvKey =
+      event.callId ||
+      event.call?.id ||
+      event.call?.callId ||
+      event.id ||
+      null;
+
+    if (!uvKey) {
+      console.warn("⚠️ No Ultravox call identifier found in event. Enable event logging to inspect payload.");
+      return res.sendStatus(200);
+    }
+
+    // 4) Den passenden Twilio CallSid finden
+    const twilioCallSid = callMap.get(uvKey);
+
+    if (!twilioCallSid) {
+      console.warn("⚠️ No Twilio CallSid mapped for uvKey:", uvKey);
+      return res.sendStatus(200);
+    }
+
+    // 5) Twilio Call wirklich beenden
+    console.log("✅ Ending Twilio call:", twilioCallSid);
+    await twilioClient.calls(twilioCallSid).update({ status: "completed" });
+
+    // 6) Aufräumen
+    callMap.delete(uvKey);
+
+    return res.sendStatus(200);
+  } catch (err) {
+    console.error("💥 ultravox-events error:", err.message);
+    return res.sendStatus(200);
+  }
 });
 
 
