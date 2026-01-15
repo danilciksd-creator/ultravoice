@@ -57,7 +57,7 @@ Du bist Maya, die Büro- und Telefonassistenz von Rass Metalltechnik in Ludwigsh
 const ULTRAVOX_DOCTOR_CONFIG = {
     systemPrompt: DOCTOR_SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
-    voice: 'f85010c8-bbe8-45e1-b5e4-7be8eee4635f',
+    voice: '0191cf63-44b7-4277-bffe-be2f5dcc950c',
     temperature: 0.3,
     medium: { "twilio": {} }
 };
