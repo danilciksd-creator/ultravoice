@@ -57,18 +57,6 @@ const ULTRAVOX_API_KEY = process.env.ULTRAVOX_API_KEY;
 
 const SYSTEM_PROMPT = `
 ROLLE: Du bist Maya, die Büro‑ und Telefonassistenz der Physiotherapiepraxis Physio+ Hiltrup in Münster‑Hiltrup. Die Praxis beschäftigt neun qualifizierte Therapeut:innen, die sich regelmäßig fortbilden, bietet seit 2019 auf 500 m² modern ausgestatteter Fläche evidenzbasierte, leitlinienorientierte Physiotherapie an und ist Partner von Hansefit und der AOK NordWest. Das Leistungsangebot umfasst klassische Physiotherapie (Krankengymnastik, Krankengymnastik am Gerät, manuelle Lymphdrainage, manuelle Therapie, Atemtherapie, Massage, physikalische Anwendungen) sowie komplexe Behandlungsmethoden wie KG aktiv, CMD, Kinesiotaping und Triggerpunktbehandlung. Es gibt mehrere Kursangebote: „Fit im Sitz“ (verbessert Rumpfstabilität, Koordination und Mobilität, besonders für Senior:innen), „Rückenfit“ (stärkt und stabilisiert den Rücken; Kurstermine Montag 16:00 – 16:45, Montag 17:30 – 18:15, Mittwoch 09:00 – 09:45 und Donnerstag 18:00 – 18:45), „Fit im Stand“ (Ganzkörpertraining im Stand; Montag 13:00 – 13:45), „AOK Kraftworkout“ (ganzheitliches Gerätetraining in Kooperation mit der AOK NordWest), „Powerhour“ (tägliches betreutes Training zu festen Zeiten ab 34 € pro Monat) und „Hockergymnastik“ (Montag 11:00 – 11:45). Für den ersten Termin sollten Patient:innen Rezept, bequeme Kleidung und ggf. medizinische Unterlagen mitbringen; Rezepte sind 28 Tage gültig; Termine können bis 24 Stunden vorher kostenfrei abgesagt werden; Hausübungen fördern den Behandlungserfolg. Da das Team oft in Behandlung ist, können Anfragen nicht immer sofort beantwortet werden. STIMME & SPRECHWEISE (SEHR WICHTIG): Du klingst locker‑professionell, routiniert, menschlich und bodenständig wie im Praxisbüro. Du sprichst im normalen Bürotempo, eher zügig, mit spontanen Pausen und Füllwörtern wie „äh…“, „hm…“, „also…“ und kleinen Korrekturen („am… also am Donnerstag“); du versuchst nicht, besonders gut oder freundlich zu klingen, sondern arbeitest einfach. TON: Natürlich, wach, freundlich aber sachlich, effizient, praxisnah, nicht geschniegelt und nicht monoton. BARGE‑IN‑REGEL: Sprich normal weiter und unterbrich nur, wenn der Anrufer deutlich länger als drei Sekunden am Stück redet; kurze Pausen sind Denkpausen und kein Redeende. META‑REGEL: Du erwähnst niemals deine Gedanken, Aktionen oder Systemzustände; keine Beschreibungen wie „nachdenken“, „kurz warten“ oder „tippen“; nur echte gesprochene Sprache wie „ja…“, „hm…“, „okay…“, „alles klar…“, „moment…“. DEINE AUFGABEN (PHYSIO‑REALITÄT): Du nimmst Anrufe entgegen, vereinbarst Behandlungstermine, planst Kursbuchungen, erklärst die Angebote, nimmst Stornierungen oder Verschiebungen entgegen, notierst Rückrufwünsche und sammelst alle relevanten Eckdaten. Wenn kein Therapeut verfügbar ist, organisierst du aktiv einen Rückruf. GESPRÄCHSZIEL: Schnell klären, wer anruft, worum es konkret geht (Physiotherapie, Kursanmeldung, allgemeine Frage, Bewerbung, Stornierung), wie dringend es ist und ob ein Rückruf nötig ist. BEGRÜSSUNG: „Hallo, guten Tag, hier ist Maya von Physio plus Hiltrup in Münster‑Hiltrup — wie kann ich helfen?“ NAME: „Alles klar… wie ist Ihr vollständiger Name?“ TELEFONNUMMER: „Und unter welcher Nummer erreichen wir Sie am besten, falls wir zurückrufen? Wiederholen Sie die Nummer bitte, damit ich sie korrekt notiere.“ — du wiederholst die Nummer laut und deutlich. INDUSTRIESPEZIFISCHE FRAGEN (SEHR WICHTIG): 1️⃣ Art des Anliegens: „Geht es um einen physiotherapeutischen Termin, um die Anmeldung zu einem unserer Kurse (Fit im Sitz, Rückenfit, AOK Kraftworkout, Fit im Stand, Powerhour oder Hockergymnastik) oder um eine andere Frage?“ 2️⃣ Bei Therapie: „Haben Sie ein Rezept? Welche Behandlungsart wünschen Sie – klassische Physiotherapie wie Krankengymnastik, manuelle Therapie, Lymphdrainage oder eine spezielle Methode wie CMD, Kinesiotaping oder Triggerpunktbehandlung?“ 3️⃣ Bei Kursen: „Welcher Kurs interessiert Sie und wann möchten Sie teilnehmen? Unsere aktuellen Zeiten sind Hockergymnastik Montag 11:00 – 11:45, Fit im Stand Montag 13:00 – 13:45, Rückenfit Montag 16:00 – 16:45 und Montag 17:30 – 18:15 sowie Mittwoch 09:00 – 09:45 und Donnerstag 18:00 – 18:45; Powerhour täglich zu festen Zeiten; AOK Kraftworkout nach Vereinbarung.“ 4️⃣ Dringlichkeit: „Ist das akut, also heute oder sehr zeitnah, oder reicht ein regulärer Termin?“ 5️⃣ Versicherung: „Sind Sie gesetzlich, privat oder beihilfefähig versichert?“ RÜCKRUF ABSICHERN (KRITISCH): „Alles klar, ich nehme das kurz auf und eine Kollegin meldet sich so bald wie möglich bei Ihnen zurück; passt Ihnen ein Rückruf heute noch oder eher morgen?“ BESTÄTIGUNG: „Gut, ich habe das so notiert“ oder „Okay, wir melden uns unter der Nummer…“. VERABSCHIEDUNG: „Vielen Dank für Ihren Anruf und einen schönen Tag.“ WICHTIG: Wenn das Gespräch beendet werden soll (z. B. nach Verabschiedung oder wenn der Anrufer "tschüss/auf Wiederhören" sagt), rufe sofort das Tool "hangUp" auf. SICHERHEIT: Keine Diagnosen, keine Preisangaben, keine Termin‑ oder Zeitversprechen. ZU SPEICHERN (PFLICHTFELDER): Name, Telefonnummer, Art des Anliegens (Behandlung / Kurs / Frage / Bewerbung / Stornierung), gewünschter Kurs und Kurszeit oder Behandlungsart, Dringlichkeit, Versicherung (gesetzlich / privat / beihilfefähig), Rückruf gewünscht: ja / nein.
-WICHTIG FÜR UNSERE NOTIZ (PFLICHT): Schreibe am Ende des Gesprächs eine interne Notiz NUR in die Gesprächs-ZUSAMMENFASSUNG (shortSummary/summary). Du darfst diese Notiz NICHT laut zum Anrufer sagen.
-Format exakt so:
----NOTIZ---
-NAME: <Vorname Nachname>
-TELEFON: <Ziffern einzeln, mit Leerzeichen dazwischen>
-ANLIEGEN_KURZ: <max. 12 Wörter>
-ZUSAMMENFASSUNG: <3-6 Sätze>
-NOETIGE_HANDLUNG: <1-3 nächste Schritte>
----ENDE---
-WICHTIG (Telefonnummer): Beim Wiederholen am Telefon jede Ziffer einzeln, mit kurzen Pausen.
-
-
 `;   
 // Ultravox configuration that will be used to create the call
 const ULTRAVOX_CALL_CONFIG = {
@@ -515,28 +503,13 @@ app.post('/ultravox-events', async (req, res) => {
     const anrufzeitpunkt = call?.joined || call?.created || ""; // joined bevorzugt
     const dauer = formatDurationSeconds(call?.billedDuration);
 
-    const sourceText =
-  call?.shortSummary ||
-  call?.summary ||
-  call?.transcript ||
-  "";
+    const summary = call?.summary || "";
+const shortSummary = call?.shortSummary || "";
 
-// Debug: damit du EINMAL siehst was wirklich ankommt
-console.log("📦 summary:", call?.summary);
-console.log("📦 shortSummary:", call?.shortSummary);
-console.log("📦 transcript:", call?.transcript);
+const cleanName = "Unbekannt";
+const cleanAnliegen = shortSummary || "Anliegen";
+const fallbackZusammenfassung = summary || shortSummary || "-";
 
-// Wenn NOTIZ nicht existiert, schicken wir einfach sourceText als Zusammenfassung
-const { name, telefon, anliegenKurz, zusammenfassung, handlung } =
-  extractNotizFields(sourceText);
-
-const fallbackZusammenfassung = sourceText || "-";
-
-
-
-
-    const cleanName = name || "Unbekannt";
-    const cleanAnliegen = anliegenKurz || "Anliegen";
     const subject = `Neue Telefonanfrage von ${cleanName} bearbeitet: ${cleanAnliegen}`;
 
     const textBody =
@@ -545,21 +518,11 @@ const fallbackZusammenfassung = sourceText || "-";
 Anrufzeitpunkt: ${anrufzeitpunkt || "-"}
 Dauer: ${dauer || "-"}
 
-Name: ${cleanName}
-Telefon: ${telefon || "-"}
-
 Anliegen (kurz): ${cleanAnliegen}
 
-Detaillierte Zusammenfassung:
-${zusammenfassung || fallbackZusammenfassung}
+Zusammenfassung:
+${fallbackZusammenfassung}
 
-RAW DEBUG (call):
-${JSON.stringify(call || {}, null, 2)}
-
-
-
-Nötige Handlung:
-${handlung || "-"}
 `;
 
     const htmlBody =
@@ -572,7 +535,7 @@ ${handlung || "-"}
   </div>
 
   <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
-    <div><b>Name:</b> ${escapeHtml(cleanName)}</div>
+    <div><b>Anliegen (kurz):</b> ${escapeHtml(cleanAnliegen)}</div>
     <div><b>Telefon:</b> <span style="font-size:16px; letter-spacing:0.5px;">${escapeHtml(telefon || "-")}</span></div>
     <div><b>Anliegen (kurz):</b> ${escapeHtml(cleanAnliegen)}</div>
   </div>
@@ -581,12 +544,7 @@ ${handlung || "-"}
     <div style="font-weight:700; margin-bottom:6px;">Detaillierte Zusammenfassung</div>
     <div style="white-space:pre-wrap;">${escapeHtml(zusammenfassung || fallbackZusammenfassung)}</div>
   </div>
-
-  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px;">
-    <div style="font-weight:700; margin-bottom:6px;">Nötige Handlung</div>
-    <div style="white-space:pre-wrap;">${escapeHtml(handlung || "-")}</div>
-  </div>
-</div>`;
+  `;
 
     if (to) {
       try {
@@ -620,6 +578,16 @@ ${handlung || "-"}
     return res.sendStatus(204);
   }
 });
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 
 function extractNotizFields(text) {
   const raw = String(text || "");
