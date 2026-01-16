@@ -205,40 +205,43 @@ function validateConfiguration() {
 }
 
 // Create Ultravox call and get join URL
-async function createUltravoxCall() {
-    const ULTRAVOX_API_URL = 'https://api.ultravox.ai/api/calls';
-    const request = https.request(ULTRAVOX_API_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': ULTRAVOX_API_KEY
+async function createUltravoxCall(config) {
+  const ULTRAVOX_API_URL = 'https://api.ultravox.ai/api/calls';
+  const request = https.request(ULTRAVOX_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': ULTRAVOX_API_KEY
+    }
+  });
+
+  return new Promise((resolve, reject) => {
+    let data = '';
+    request.on('response', (response) => {
+      response.on('data', chunk => data += chunk);
+      response.on('end', () => {
+        try {
+          const parsedData = JSON.parse(data);
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            resolve(parsedData);
+          } else {
+            reject(new Error(`Ultravox API error (${response.statusCode}): ${data}`));
+          }
+        } catch {
+          reject(new Error(`Failed to parse Ultravox response: ${data}`));
         }
+      });
     });
 
-    return new Promise((resolve, reject) => {
-        let data = '';
-        request.on('response', (response) => {
-            response.on('data', chunk => data += chunk);
-            response.on('end', () => {
-                try {
-                    const parsedData = JSON.parse(data);
-                    if (response.statusCode >= 200 && response.statusCode < 300) {
-                        resolve(parsedData);
-                    } else {
-                        reject(new Error(`Ultravox API error (${response.statusCode}): ${data}`));
-                    }
-                } catch (parseError) {
-                    reject(new Error(`Failed to parse Ultravox response: ${data}`));
-                }
-            });
-        });
-        request.on('error', (error) => {
-            reject(new Error(`Network error calling Ultravox: ${error.message}`));
-        });
-        request.write(JSON.stringify(ULTRAVOX_CALL_CONFIG));
-        request.end();
+    request.on('error', (error) => {
+      reject(new Error(`Network error calling Ultravox: ${error.message}`));
     });
+
+    request.write(JSON.stringify(config));
+    request.end();
+  });
 }
+
 
 app.post('/pinteric', async (req, res) => {
   try {
@@ -252,9 +255,14 @@ app.post('/pinteric', async (req, res) => {
       return res.type('text/xml').send(twiml.toString());
     }
 
-    const response = await createUltravoxCall(ULTRAVOX_PINTERIC_CONFIG, twilioCallSid);
+    const response = await createUltravoxCall(ULTRAVOX_PINTERIC_CONFIG);
+
 
     if (!response.joinUrl) throw new Error('No joinUrl received from Ultravox for pinteric agent');
+    const uvKey = response.callId || response.id || response.joinUrl;
+callMap.set(uvKey, twilioCallSid);
+console.log('🧷 Mapped Ultravox->Twilio:', uvKey, '=>', twilioCallSid);
+
 
     console.log('✅ Pinteric joinUrl:', response.joinUrl);
 
@@ -292,7 +300,8 @@ console.log('📌 Twilio CallSid:', twilioCallSid);
         }
 
         console.log('🤖 Creating Ultravox call...');
-        const response = await createUltravoxCall();
+        const response = await createUltravoxCall(ULTRAVOX_CALL_CONFIG);
+
         
         if (!response.joinUrl) {
             throw new Error('No joinUrl received from Ultravox API');
@@ -358,38 +367,8 @@ console.log('📌 Twilio CallSid:', twilioCallSid);
 
         console.log('🤖 Creating Doctor Ultravox call...');
 
-        // Doctor-specific call creation
-        const response = await new Promise((resolve, reject) => {
-            const ULTRAVOX_API_URL = 'https://api.ultravox.ai/api/calls';
-            const request = https.request(ULTRAVOX_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-API-Key': ULTRAVOX_API_KEY
-                }
-            });
+        const response = await createUltravoxCall(ULTRAVOX_DOCTOR_CONFIG);
 
-            let data = '';
-            request.on('response', (responseStream) => {
-                responseStream.on('data', chunk => data += chunk);
-                responseStream.on('end', () => {
-                    try {
-                        const parsed = JSON.parse(data);
-                        if (responseStream.statusCode >= 200 && responseStream.statusCode < 300) {
-                            resolve(parsed);
-                        } else {
-                            reject(new Error(`API error: ${data}`));
-                        }
-                    } catch (e) {
-                        reject(e);
-                    }
-                });
-            });
-
-            request.on('error', err => reject(err));
-            request.write(JSON.stringify(ULTRAVOX_DOCTOR_CONFIG));
-            request.end();
-        });
 
         if (!response.joinUrl) {
             throw new Error('No joinUrl received from Ultravox for doctor agent');
@@ -617,6 +596,7 @@ ${handlung || "-"}
 
     callMap.delete(callId);
     return res.sendStatus(204); 
+    
 
   } catch (err) {
     console.error("💥 ultravox-events error:", err?.message);
@@ -646,14 +626,15 @@ function extractNotizFields(text) {
     return m ? m[1].trim() : "";
   };
 
-  const name = get("NAME");
-  const telefon = get("TELEFON");
-  const anliegenKurz = get("ANLIEGEN_KURZ");
-  const zusammenfassung = get("ZUSAMMENFASSUNG");
-  const handlung = get("NOETIGE_HANDLUNG");
-
-  return { name, telefon, anliegenKurz, zusammenfassung, handlung };
+  return {
+    name: get("NAME"),
+    telefon: get("TELEFON"),
+    anliegenKurz: get("ANLIEGEN_KURZ"),
+    zusammenfassung: get("ZUSAMMENFASSUNG"),
+    handlung: get("NOETIGE_HANDLUNG"),
+  };
 }
+
 
 function formatDurationSeconds(billedDuration) {
   // billedDuration kommt bei dir z.B. "54s" – wir machen mm:ss
