@@ -618,14 +618,4 @@ function escapeHtml(str) {
 
 
 
-function formatDurationSeconds(billedDuration) {
-  // billedDuration kommt bei dir z.B. "54s" – wir machen mm:ss
-  const s = String(billedDuration || "").trim();
-  const sec = Number((s.match(/(\d+)/)?.[1]) || 0);
-  const mm = String(Math.floor(sec / 60)).padStart(2, "0");
-  const ss = String(sec % 60).padStart(2, "0");
-  return sec ? `${mm}:${ss}` : "";
-}
-
-
 startServer();
