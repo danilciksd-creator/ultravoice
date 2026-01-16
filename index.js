@@ -157,18 +157,19 @@ function extractNotizFields(text) {
   const block = blockMatch ? blockMatch[1] : raw;
 
   const get = (label) => {
-    const m = block.match(new RegExp(`${label}\\s*:\\s*(.*)`, "i"));
+    const m = block.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"));
     return m ? m[1].trim() : "";
   };
 
-  const name = get("NAME");
-  const telefon = get("TELEFON");
-  const anliegenKurz = get("ANLIEGEN_KURZ");
-  const zusammenfassung = get("ZUSAMMENFASSUNG");
-  const handlung = get("NOETIGE_HANDLUNG");
-
-  return { name, telefon, anliegenKurz, zusammenfassung, handlung };
+  return {
+    name: get("NAME"),
+    telefon: get("TELEFON"),
+    anliegenKurz: get("ANLIEGEN_KURZ"),
+    zusammenfassung: get("ZUSAMMENFASSUNG"),
+    handlung: get("NOETIGE_HANDLUNG"),
+  };
 }
+
 
 function formatDurationSeconds(billedDuration) {
   // billedDuration kommt bei dir z.B. "54s" – wir machen mm:ss
@@ -623,26 +624,6 @@ ${handlung || "-"}
     return res.sendStatus(204);
   }
 });
-
-function extractNotizFields(text) {
-  const raw = String(text || "");
-  const blockMatch = raw.match(/---NOTIZ---([\s\S]*?)---ENDE---/i);
-  const block = blockMatch ? blockMatch[1] : raw;
-
-  const get = (label) => {
-    const m = block.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"));
-    return m ? m[1].trim() : "";
-  };
-
-  return {
-    name: get("NAME"),
-    telefon: get("TELEFON"),
-    anliegenKurz: get("ANLIEGEN_KURZ"),
-    zusammenfassung: get("ZUSAMMENFASSUNG"),
-    handlung: get("NOETIGE_HANDLUNG"),
-  };
-}
-
 
 function escapeHtml(str) {
   return String(str)
