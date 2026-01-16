@@ -113,7 +113,6 @@ const ULTRAVOX_PINTERIC_CONFIG = {
   selectedTools: [{ toolName: "hangUp" }],
 };
 
-
 const ULTRAVOX_DOCTOR_CONFIG = {
     systemPrompt: DOCTOR_SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
@@ -126,7 +125,6 @@ const ULTRAVOX_DOCTOR_CONFIG = {
 
 };
 
-
 const ULTRAVOX_HANDYMAN_CONFIG = {
     systemPrompt: SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
@@ -138,8 +136,6 @@ const ULTRAVOX_HANDYMAN_CONFIG = {
 ],
 
 };
-
-
 
 function formatDurationSeconds(billedDuration) {
   // billedDuration kommt bei dir z.B. "54s" – wir machen mm:ss
@@ -162,8 +158,6 @@ function validateConfiguration() {
 { name: 'SMTP_USER', value: process.env.SMTP_USER },
 { name: 'SMTP_PASS', value: process.env.SMTP_PASS }
 ];
-
-
 
     const errors = [];
 
@@ -261,10 +255,6 @@ console.log('🧷 Mapped Ultravox->Twilio:', uvKey, '=>', twilioCallSid);
   }
 });
 
-
-// Handle incoming calls from Twilio
-// Note: We have to expose this endpoint publicly (e.g. using ngrok in dev)
-//       and set as incoming call webhook in Twilio
 app.post('/incoming', async (req, res) => {
     try {
         console.log('📞 Incoming call received');
@@ -536,15 +526,13 @@ ${fallbackZusammenfassung}
 
   <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
     <div><b>Anliegen (kurz):</b> ${escapeHtml(cleanAnliegen)}</div>
-    <div><b>Telefon:</b> <span style="font-size:16px; letter-spacing:0.5px;">${escapeHtml(telefon || "-")}</span></div>
-    <div><b>Anliegen (kurz):</b> ${escapeHtml(cleanAnliegen)}</div>
   </div>
 
-  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
-    <div style="font-weight:700; margin-bottom:6px;">Detaillierte Zusammenfassung</div>
-    <div style="white-space:pre-wrap;">${escapeHtml(zusammenfassung || fallbackZusammenfassung)}</div>
+  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px;">
+    <div style="font-weight:700; margin-bottom:6px;">Zusammenfassung</div>
+    <div style="white-space:pre-wrap;">${escapeHtml(fallbackZusammenfassung)}</div>
   </div>
-  `;
+</div>`;
 
     if (to) {
       try {
@@ -587,28 +575,5 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
-
-
-function extractNotizFields(text) {
-  const raw = String(text || "");
-  const blockMatch = raw.match(/---NOTIZ---([\s\S]*?)---ENDE---/i);
-  const block = blockMatch ? blockMatch[1] : raw;
-
-  const get = (label) => {
-    const m = block.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"));
-    return m ? m[1].trim() : "";
-  };
-
-  return {
-    name: get("NAME"),
-    telefon: get("TELEFON"),
-    anliegenKurz: get("ANLIEGEN_KURZ"),
-    zusammenfassung: get("ZUSAMMENFASSUNG"),
-    handlung: get("NOETIGE_HANDLUNG"),
-  };
-}
-
-
-
 
 startServer();
