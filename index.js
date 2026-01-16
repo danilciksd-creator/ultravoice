@@ -105,7 +105,7 @@ WICHTIG (Telefonnummer): Wenn du die Telefonnummer wiederholst, sprich jede Ziff
 
 PFLICHTFELDER: Vorname, Nachname, Telefonnummer, Anliegen kurz, Details, Dringlichkeit, Rückruf gewünscht (ja/nein), bevorzugte Rückrufzeit.
 
-Am Ende (oder sobald klar): Formuliere eine interne Notiz im exakt folgenden Format (für die E-Mail):
+Am Ende (oder sobald klar): Formuliere eine interne Notiz im exakt folgenden Format ohne diese auszusprechen (für die E-Mail):
 ---NOTIZ---
 NAME: <Vorname Nachname>
 TELEFON: <Ziffern einzeln notiert>
@@ -151,24 +151,6 @@ const ULTRAVOX_HANDYMAN_CONFIG = {
 
 };
 
-function extractNotizFields(text) {
-  const raw = String(text || "");
-  const blockMatch = raw.match(/---NOTIZ---([\s\S]*?)---ENDE---/i);
-  const block = blockMatch ? blockMatch[1] : raw;
-
-  const get = (label) => {
-    const m = block.match(new RegExp(`^\\s*${label}\\s*:\\s*(.+)$`, "im"));
-    return m ? m[1].trim() : "";
-  };
-
-  return {
-    name: get("NAME"),
-    telefon: get("TELEFON"),
-    anliegenKurz: get("ANLIEGEN_KURZ"),
-    zusammenfassung: get("ZUSAMMENFASSUNG"),
-    handlung: get("NOETIGE_HANDLUNG"),
-  };
-}
 
 
 function formatDurationSeconds(billedDuration) {
@@ -570,6 +552,10 @@ Anliegen (kurz): ${cleanAnliegen}
 
 Detaillierte Zusammenfassung:
 ${zusammenfassung || fallbackZusammenfassung}
+
+RAW DEBUG (call):
+${JSON.stringify(call || {}, null, 2)}
+
 
 
 Nötige Handlung:
