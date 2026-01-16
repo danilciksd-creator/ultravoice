@@ -616,24 +616,6 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-function extractNotizFields(text) {
-  const raw = String(text || "");
-  const blockMatch = raw.match(/---NOTIZ---([\s\S]*?)---ENDE---/i);
-  const block = blockMatch ? blockMatch[1] : raw;
-
-  const get = (label) => {
-    const m = block.match(new RegExp(`${label}\\s*:\\s*(.*)`, "i"));
-    return m ? m[1].trim() : "";
-  };
-
-  return {
-    name: get("NAME"),
-    telefon: get("TELEFON"),
-    anliegenKurz: get("ANLIEGEN_KURZ"),
-    zusammenfassung: get("ZUSAMMENFASSUNG"),
-    handlung: get("NOETIGE_HANDLUNG"),
-  };
-}
 
 
 function formatDurationSeconds(billedDuration) {
