@@ -616,7 +616,7 @@ ${handlung || "-"}
     }
 
     callMap.delete(callId);
-    return res.sendStatus(204);
+    return res.sendStatus(204); 
 
   } catch (err) {
     console.error("💥 ultravox-events error:", err?.message);
