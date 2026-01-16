@@ -78,10 +78,46 @@ const DOCTOR_SYSTEM_PROMPT = `
 Du bist Maya, die Büro- und Telefonassistenz von Rass Metalltechnik in Ludwigshafen, einem Handwerksbetrieb für Heizungs-, Klima-, Lüftungs- und Metallarbeiten; du arbeitest täglich im Büro, nimmst viele Anrufe entgegen, oft parallel zum Baustellenbetrieb; STIMME & SPRECHWEISE: locker-professionell, routiniert, menschlich, bodenständig wie im Handwerksbüro, nicht langsam, nicht künstlich freundlich, kein Vorlesen, normales eher zügiges Büro-Tempo, natürlich fließende Sätze, spontane Pausen, normale Füllwörter wie „äh“, „hm“, „also“, „ja, moment“, „ich schau kurz“, kleine Korrekturen erlaubt wie „am… also am Donnerstag“, du versuchst nicht gut zu klingen, du arbeitest; TON: natürlich, wach, freundlich aber sachlich, effizient, handwerksnah, nicht geschniegelt, nicht monoton, wie ein echtes Handwerksbüro an einem normalen Arbeitstag; BARGE-IN-REGEL: sprich normal weiter, unterbrich nur wenn der Anrufer klar länger als 3 Sekunden spricht, kurze Pausen sind Denken und kein Redeende; META-REGEL: sprich niemals Aktionen, Gedanken oder Systemzustände aus, keine Beschreibungen wie „nachdenken“, „kurz warten“, „tippen“, „Pause“, nur echte gesprochene Sprache, erlaubt sind z. B. „ja“, „hm“, „okay“, „alles klar“, „moment“ (nur als Wort), niemals erklären was du tust oder ankündigen dass du wartest oder denkst; AUFGABEN: Anfragen entgegennehmen, Störungsmeldungen erfassen, Rückrufwünsche notieren, alle wichtigen Eckdaten sammeln, vermeiden dass der Kunde weitertelefoniert, wenn niemand sofort verfügbar ist aktiv einen Rückruf sichern; GESPRÄCHSZIEL: in kurzer Zeit klären wer anruft, worum es geht, wie dringend es ist, Rückruf organisieren und festhalten; BEGRÜSSUNG: „Hallo, guten Tag, hier ist Maya von Rass Metalltechnik in Ludwigshafen — wie kann ich helfen?“; NAME: „Alles klar… wie ist Ihr vollständiger Name?“; TELEFONNUMMER: „Und unter welcher Nummer erreichen wir Sie am besten, falls wir zurückrufen?“ (bei Bedarf wiederholen); INDUSTRIESPEZIFISCHE FRAGEN gezielt und kurz: Art des Anliegens „Geht es um Heizung, Klima, Lüftung oder eher um Metall-/Sonderanfertigung?“; Heizung: „Ist die Heizung komplett ausgefallen oder läuft sie noch eingeschränkt?“; Klima: „Kühlt die Anlage gar nicht mehr oder nur schwächer?“; Lüftung: „Geht es um eine Störung oder um Wartung / Nachrüstung?“; Metalltechnik: „Handelt es sich um eine Reparatur oder um eine Neuanfertigung?“; DRINGLICHKEIT: „Ist das akut, also heute oder sehr zeitnah, oder reicht ein Rückruf zur Terminabstimmung?“; ORT: „In welcher Stadt oder welchem Ortsteil ist das Ganze?“; RÜCKRUF ABSICHERN wenn kein Handwerker verfügbar ist: „Alles klar, ich nehme das kurz auf und ein Kollege meldet sich so bald wie möglich bei Ihnen zurück“, optional „Passt Ihnen ein Rückruf heute noch oder eher morgen?“; BESTÄTIGUNG: „Gut, hab ich so notiert“ oder „Okay, ich gebe das direkt weiter, wir melden uns unter der Nummer bei Ihnen“; VERABSCHIEDUNG: „Vielen Dank für Ihren Anruf und einen schönen Tag“; WICHTIG: Wenn das Gespräch beendet werden soll (z. B. nach Verabschiedung oder wenn der Anrufer "tschüss/auf Wiederhören" sagt), rufe sofort das Tool "hangUp" auf.; SICHERHEIT: keine technischen Ferndiagnosen, keine Preisangaben, keine Zeit- oder Terminversprechen; ZU SPEICHERN (Pflichtfelder): Name, Telefonnummer, Art des Anliegens (Heizung/Klima/Lüftung/Metall), Kurzbeschreibung des Problems, Dringlichkeit, Ort, Rückruf gewünscht ja/nein.
 `;
 
+// -------------------------------
+// Kanzlei Pinteric Agent Configuration
+// -------------------------------
+const PINTERIC_SYSTEM_PROMPT = `
+Du bist Maya, die Büro- und Telefonassistenz der Kanzlei Pinteric. 
+STIMME & SPRECHWEISE: locker-professionell, routiniert, menschlich, bodenständig wie im Kanzleibüro. 
+BARGE-IN-REGEL: unterbrich nur, wenn der Anrufer klar länger als 3 Sekunden spricht. 
+META-REGEL: keine System-/Tool-Erklärungen, keine "ich denke", kein "ich tippe".
+SICHERHEIT: keine Rechtsberatung, keine Fristen zusagen, keine Erfolgsaussagen, keine Preisangaben. 
+GESPRÄCHSZIEL: schnell klären: Name, Telefonnummer, Anliegen (Thema), Dringlichkeit, Rückruf (ja/nein), gewünschte Rückrufzeit.
+
+WICHTIG (Telefonnummer): Wenn du die Telefonnummer wiederholst, sprich jede Ziffer einzeln und mit kurzen Pausen, z.B.: "null … eins … sieben …". Keine zusammengezogenen Zahlen.
+
+PFLICHTFELDER: Vorname, Nachname, Telefonnummer, Anliegen kurz, Details, Dringlichkeit, Rückruf gewünscht (ja/nein), bevorzugte Rückrufzeit.
+
+Am Ende (oder sobald klar): Formuliere eine interne Notiz im exakt folgenden Format (für die E-Mail):
+---NOTIZ---
+NAME: <Vorname Nachname>
+TELEFON: <Ziffern einzeln notiert>
+ANLIEGEN_KURZ: <max. 12 Wörter>
+ZUSAMMENFASSUNG: <3-6 Sätze>
+NOETIGE_HANDLUNG: <1-3 konkrete nächste Schritte>
+---ENDE---
+Wenn der Anrufer sich verabschiedet ("tschüss", "auf Wiederhören"), rufe sofort das Tool "hangUp" auf.
+`;
+
+const ULTRAVOX_PINTERIC_CONFIG = {
+  systemPrompt: PINTERIC_SYSTEM_PROMPT,
+  model: 'fixie-ai/ultravox',
+  voice: 'aa1be3ac-b385-4dca-a5b3-23729bab5c2f', // oder eigene Kanzlei-Voice
+  temperature: 0.2,
+  medium: { twilio: {} },
+  selectedTools: [{ toolName: "hangUp" }],
+};
+
+
 const ULTRAVOX_DOCTOR_CONFIG = {
     systemPrompt: DOCTOR_SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
-    voice: '0191cf63-44b7-4277-bffe-be2f5dcc950c',
+    voice: 'aa1be3ac-b385-4dca-a5b3-23729bab5c2f',
     temperature: 0.3,
     medium: { "twilio": {} },
     selectedTools: [
@@ -94,7 +130,7 @@ const ULTRAVOX_DOCTOR_CONFIG = {
 const ULTRAVOX_HANDYMAN_CONFIG = {
     systemPrompt: SYSTEM_PROMPT,
     model: 'fixie-ai/ultravox',
-    voice: '0191cf63-44b7-4277-bffe-be2f5dcc950c', // deine Custom-Voice
+    voice: 'aa1be3ac-b385-4dca-a5b3-23729bab5c2f', // deine Custom-Voice
     temperature: 0.3,
     medium: { "twilio": {} },
     selectedTools: [
@@ -102,6 +138,34 @@ const ULTRAVOX_HANDYMAN_CONFIG = {
 ],
 
 };
+
+function extractNotizFields(text) {
+  const raw = String(text || "");
+  const blockMatch = raw.match(/---NOTIZ---([\s\S]*?)---ENDE---/i);
+  const block = blockMatch ? blockMatch[1] : raw;
+
+  const get = (label) => {
+    const m = block.match(new RegExp(`${label}\\s*:\\s*(.*)`, "i"));
+    return m ? m[1].trim() : "";
+  };
+
+  const name = get("NAME");
+  const telefon = get("TELEFON");
+  const anliegenKurz = get("ANLIEGEN_KURZ");
+  const zusammenfassung = get("ZUSAMMENFASSUNG");
+  const handlung = get("NOETIGE_HANDLUNG");
+
+  return { name, telefon, anliegenKurz, zusammenfassung, handlung };
+}
+
+function formatDurationSeconds(billedDuration) {
+  // billedDuration kommt bei dir z.B. "54s" – wir machen mm:ss
+  const s = String(billedDuration || "").trim();
+  const sec = Number((s.match(/(\d+)/)?.[1]) || 0);
+  const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+  const ss = String(sec % 60).padStart(2, "0");
+  return sec ? `${mm}:${ss}` : "";
+}
 
 
 // Ensure required configuration vars are set
@@ -176,6 +240,35 @@ async function createUltravoxCall() {
     });
 }
 
+app.post('/pinteric', async (req, res) => {
+  try {
+    console.log('⚖️ Incoming PINTERIC call received');
+    const twilioCallSid = req.body.CallSid;
+    console.log('📌 Twilio CallSid:', twilioCallSid);
+
+    if (!validateConfiguration()) {
+      const twiml = new twilio.twiml.VoiceResponse();
+      twiml.say('Sorry, there was a configuration error. Please contact support.');
+      return res.type('text/xml').send(twiml.toString());
+    }
+
+    const response = await createUltravoxCall(ULTRAVOX_PINTERIC_CONFIG, twilioCallSid);
+
+    if (!response.joinUrl) throw new Error('No joinUrl received from Ultravox for pinteric agent');
+
+    console.log('✅ Pinteric joinUrl:', response.joinUrl);
+
+    const twiml = new twilio.twiml.VoiceResponse();
+    twiml.connect().stream({ url: response.joinUrl, name: "pinteric" });
+
+    res.type('text/xml').send(twiml.toString());
+  } catch (err) {
+    console.error('💥 Error PINTERIC:', err.message);
+    const twiml = new twilio.twiml.VoiceResponse();
+    twiml.say('The assistant cannot take your call right now. Sorry!');
+    res.type('text/xml').send(twiml.toString());
+  }
+});
 
 
 // Handle incoming calls from Twilio
@@ -442,52 +535,63 @@ app.post('/ultravox-events', async (req, res) => {
       "unknown";
 
     // ✅ 2) Mail senden
-    const to = process.env.NOTES_EMAIL_TO;
+        const to = process.env.NOTES_EMAIL_TO;
     const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-    const shortSummary = call?.shortSummary || "(keine Kurznotiz)";
-    const summary = call?.summary || "(keine Zusammenfassung)";
-    const endReason = call?.endReason || "";
-    const billedDuration = call?.billedDuration || "";
-    const started = call?.created || "";
-    const joined = call?.joined || "";
-    const ended = call?.ended || "";
+    const anrufzeitpunkt = call?.joined || call?.created || ""; // joined bevorzugt
+    const dauer = formatDurationSeconds(call?.billedDuration);
 
-    const subject = `Anrufnotiz (${billedDuration || "Dauer unbekannt"}) – ${callId}`;
+    // Wir lesen bevorzugt aus shortSummary/summary die NOTIZ
+    const { name, telefon, anliegenKurz, zusammenfassung, handlung } =
+      extractNotizFields(call?.shortSummary || call?.summary);
+
+    const cleanName = name || "Unbekannt";
+    const cleanAnliegen = anliegenKurz || "Anliegen";
+    const subject = `Neue Telefonanfrage von ${cleanName} bearbeitet: ${cleanAnliegen}`;
 
     const textBody =
-`Ultravox Anrufnotiz
+`Neue Telefonanfrage
 
-Call ID: ${callId}
-Twilio CallSid: ${twilioCallSid}
-Start: ${started}
-Joined: ${joined}
-Ende: ${ended}
-Endgrund: ${endReason}
-Billed duration: ${billedDuration}
+Anrufzeitpunkt: ${anrufzeitpunkt || "-"}
+Dauer: ${dauer || "-"}
 
-Kurznotiz:
-${shortSummary}
+Name: ${cleanName}
+Telefon: ${telefon || "-"}
 
-Zusammenfassung:
-${summary}
+Anliegen (kurz): ${cleanAnliegen}
+
+Detaillierte Zusammenfassung:
+${zusammenfassung || "-"}
+
+Nötige Handlung:
+${handlung || "-"}
 `;
 
     const htmlBody =
-`<h2>Ultravox Anrufnotiz</h2>
-<ul>
-  <li><b>Call ID:</b> ${callId}</li>
-  <li><b>Twilio CallSid:</b> ${twilioCallSid}</li>
-  <li><b>Start:</b> ${started}</li>
-  <li><b>Joined:</b> ${joined}</li>
-  <li><b>Ende:</b> ${ended}</li>
-  <li><b>Endgrund:</b> ${endReason}</li>
-  <li><b>Billed duration:</b> ${billedDuration}</li>
-</ul>
-<h3>Kurznotiz</h3>
-<p>${escapeHtml(shortSummary)}</p>
-<h3>Zusammenfassung</h3>
-<p>${escapeHtml(summary)}</p>`;
+`<div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; line-height:1.4; color:#111;">
+  <h2 style="margin:0 0 12px;">Neue Telefonanfrage</h2>
+
+  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
+    <div><b>Anrufzeitpunkt:</b> ${escapeHtml(anrufzeitpunkt || "-")}</div>
+    <div><b>Dauer:</b> ${escapeHtml(dauer || "-")}</div>
+  </div>
+
+  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
+    <div><b>Name:</b> ${escapeHtml(cleanName)}</div>
+    <div><b>Telefon:</b> <span style="font-size:16px; letter-spacing:0.5px;">${escapeHtml(telefon || "-")}</span></div>
+    <div><b>Anliegen (kurz):</b> ${escapeHtml(cleanAnliegen)}</div>
+  </div>
+
+  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
+    <div style="font-weight:700; margin-bottom:6px;">Detaillierte Zusammenfassung</div>
+    <div style="white-space:pre-wrap;">${escapeHtml(zusammenfassung || "-")}</div>
+  </div>
+
+  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px;">
+    <div style="font-weight:700; margin-bottom:6px;">Nötige Handlung</div>
+    <div style="white-space:pre-wrap;">${escapeHtml(handlung || "-")}</div>
+  </div>
+</div>`;
 
     if (to) {
       try {
@@ -495,11 +599,9 @@ ${summary}
         console.log("📧 Notes email sent to:", to);
       } catch (e) {
         console.error("❌ Notes email failed:", e?.message);
-        console.error(e);
       }
-    } else {
-      console.warn("⚠️ NOTES_EMAIL_TO not set; skipping email");
     }
+
 
     // ✅ 3) Twilio call beenden (wenn SID nicht unknown)
     if (twilioCallSid !== "unknown") {
@@ -533,5 +635,34 @@ function escapeHtml(str) {
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+function extractNotizFields(text) {
+  const raw = String(text || "");
+  const blockMatch = raw.match(/---NOTIZ---([\s\S]*?)---ENDE---/i);
+  const block = blockMatch ? blockMatch[1] : raw;
+
+  const get = (label) => {
+    const m = block.match(new RegExp(`${label}\\s*:\\s*(.*)`, "i"));
+    return m ? m[1].trim() : "";
+  };
+
+  const name = get("NAME");
+  const telefon = get("TELEFON");
+  const anliegenKurz = get("ANLIEGEN_KURZ");
+  const zusammenfassung = get("ZUSAMMENFASSUNG");
+  const handlung = get("NOETIGE_HANDLUNG");
+
+  return { name, telefon, anliegenKurz, zusammenfassung, handlung };
+}
+
+function formatDurationSeconds(billedDuration) {
+  // billedDuration kommt bei dir z.B. "54s" – wir machen mm:ss
+  const s = String(billedDuration || "").trim();
+  const sec = Number((s.match(/(\d+)/)?.[1]) || 0);
+  const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+  const ss = String(sec % 60).padStart(2, "0");
+  return sec ? `${mm}:${ss}` : "";
+}
+
 
 startServer();
