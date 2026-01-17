@@ -548,55 +548,87 @@ app.post('/ultravox-events', async (req, res) => {
       callMap.get(callId) ||
       "unknown";
 
-    // ✅ 2) Mail senden
-        const to = process.env.NOTES_EMAIL_TO;
-    const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+// ✅ 2) Mail senden
+const to = process.env.NOTES_EMAIL_TO;
+const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
-    const anrufzeitpunkt = call?.joined || call?.created || ""; // joined bevorzugt
-    const dauer = formatDurationSeconds(call?.billedDuration);
+// Twilio Nummer (zuverlässig)
+const callerNumber = await getTwilioCallerNumberSafe(twilioCallSid);
 
-    const summary = call?.summary || "";
+// Zeit hübsch formatieren
+const anrufzeitpunktIso = call?.joined || call?.created || "";
+const anrufUhrzeit = formatTimeDE(anrufzeitpunktIso);
+
+// Dauer
+const dauer = formatDurationSeconds(call?.billedDuration);
+
+function formatTimeDE(isoString) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return "";
+  const hhmm = new Intl.DateTimeFormat("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Berlin",
+    hour12: false,
+  }).format(d);
+  return `${hhmm} Uhr`;
+}
+
+
+// Inhalte
+const summary = call?.summary || "";
 const shortSummary = call?.shortSummary || "";
 
 const cleanAnliegen = shortSummary || "Anliegen";
 const fallbackZusammenfassung = summary || shortSummary || "-";
 
-    const subject = `Neue Telefonanfrage von Nifiso bearbeitet`;
-    const textBody =
+const subject = `Neue Telefonanfrage (Nifiso)`;
+
+const textBody =
 `Neue Telefonanfrage
 
 Telefonnummer: ${callerNumber || "-"}
 
-Anrufzeitpunkt: ${anrufzeitpunkt || "-"}
+Uhrzeit: ${anrufUhrzeit || "-"}
+
 Dauer: ${dauer || "-"}
 
 Anliegen (kurz): ${cleanAnliegen}
 
 Zusammenfassung:
 ${fallbackZusammenfassung}
-
 `;
 
+const htmlBody =
+`<div style="font-family: Arial, sans-serif; color:#111; line-height:1.4;">
+  <h2 style="margin:0 0 10px; font-size:18px;">Neue Telefonanfrage</h2>
 
-    const htmlBody =
-`<div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; line-height:1.4; color:#111;">
-  <h2 style="margin:0 0 12px;">Neue Telefonanfrage</h2>
+  <table style="border-collapse:collapse; width:100%; max-width:560px;">
+    <tr>
+      <td style="padding:6px 0; width:140px;"><b>Telefonnummer:</b></td>
+      <td style="padding:6px 0;">${escapeHtml(callerNumber || "-")}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;"><b>Uhrzeit:</b></td>
+      <td style="padding:6px 0;">${escapeHtml(anrufUhrzeit || "-")}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;"><b>Dauer:</b></td>
+      <td style="padding:6px 0;">${escapeHtml(dauer || "-")}</td>
+    </tr>
+    <tr>
+      <td style="padding:6px 0;"><b>Anliegen (kurz):</b></td>
+      <td style="padding:6px 0;">${escapeHtml(cleanAnliegen)}</td>
+    </tr>
+  </table>
 
-    <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
-    <div><b>Telefonnummer:</b> ${escapeHtml(callerNumber || "-")}</div>
-    <div><b>Anrufzeitpunkt:</b> ${escapeHtml(anrufzeitpunkt || "-")}</div>
-    <div><b>Dauer:</b> ${escapeHtml(dauer || "-")}</div>
-  </div>
-
-  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px; margin-bottom:12px;">
-    <div><b>Anliegen (kurz):</b> ${escapeHtml(cleanAnliegen)}</div>
-  </div>
-
-  <div style="padding:12px 14px; border:1px solid #e5e7eb; border-radius:10px;">
+  <div style="margin-top:12px; padding-top:10px; border-top:1px solid #e5e7eb;">
     <div style="font-weight:700; margin-bottom:6px;">Zusammenfassung</div>
     <div style="white-space:pre-wrap;">${escapeHtml(fallbackZusammenfassung)}</div>
   </div>
 </div>`;
+
 
     if (to) {
       try {
@@ -607,7 +639,7 @@ ${fallbackZusammenfassung}
       }
     }
 
-  const callerNumber = await getTwilioCallerNumberSafe(twilioCallSid);
+  
 
 
 
@@ -643,4 +675,4 @@ function escapeHtml(str) {
     .replaceAll("'", "&#039;");
 }
 
-startServer();
+startServer();  
